@@ -1,56 +1,81 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
-import data from "../assets/irisData";
+import data from "../assets/irisData.json";
 
-export const ScatterPlot = () => {
-  let width = 400;
-  let height = 300;
-  let margin = { top: 30, bottom: 60, right: 30, left: 60 };
+function ScatterPlot() {
+  const svgElemRef = useRef(null);
 
-  let svg = d3
-    .select("body")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
+  useEffect(() => {
+    console.log("start");
 
-  let xScale = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, (d) => d[0])])
-    .range([margin.left, width - margin.right]);
+    let margin = { top: 10, right: 30, bottom: 50, left: 60 };
+    let width = 500 - margin.left - margin.right;
+    let height = 500 - margin.top - margin.bottom;
 
-  let yScale = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, (d) => d[1])])
-    .range([height - margin.bottom, margin.top]);
+    let svg = d3
+      .select(svgElemRef.current)
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-  let xAxis = d3.axisBottom(xScale).ticks(5);
-  let yAxis = d3.axisLeft(yScale).ticks(5);
+    let x = d3
+      .scaleLinear()
+      .domain(d3.extent(data, (d) => d["sepal length (cm)"]))
+      .range([0, width]);
 
-  let color = d3
-    .scaleOrdinal()
-    .domain(["setosa", "versicolor", "virginica"])
-    .range(["#3366cc", "#dc3912", "#ff9900"]);
+    let y = d3
+      .scaleLinear()
+      .domain(d3.extent(data, (d) => d["sepal width (cm)"]))
+      .range([height, 0]);
 
-  svg
-    .append("g")
-    .attr("class", "x-axis")
-    .attr("transform", `translate(0, ${height - margin.bottom})`)
-    .call(xAxis);
+    let color = d3
+      .scaleOrdinal()
+      .domain(["setosa", "versicolor", "virginica"])
+      .range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
 
-  svg
-    .append("g")
-    .attr("class", "y axis")
-    .attr("transform", `translate(${margin.left}, 0)`)
-    .call(yAxis);
+    svg
+      .append("g")
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(x));
 
-  svg
-    .append("g")
-    .selectAll("circle")
-    .data(data)
-    .enter()
-    .append("circle")
-    .attr("cx", (d) => xScale(d[0]))
-    .attr("cy", (d) => yScale(d[1]))
-    .attr("r", 4)
-    .style("fill", (d) => color(d[4]));
-};
+    svg.append("g").call(d3.axisLeft(y));
+
+    svg
+      .append("g")
+      .selectAll("dot")
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("cx", (d) => x(d["sepal length (cm)"]))
+      .attr("cy", (d) => y(d["sepal width (cm)"]))
+      .attr("r", 4)
+      .style("fill", (d) => color(d["species"]))
+      .style("opacity", "0.7");
+
+    // Add X-axis label
+    svg
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height + margin.bottom - 10) // Positioning it below the axis
+      .text("Sepal Length (cm)");
+
+    // Add Y-axis label
+    svg
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -height / 2) // Negative because of the rotation
+      .attr("y", -margin.left + 20) // Adding some padding to move it away from the axis
+      .text("Sepal Width (cm)");
+  }, []);
+
+  return (
+    <div>
+      <svg ref={svgElemRef}></svg>
+    </div>
+  );
+}
+
+export default ScatterPlot;

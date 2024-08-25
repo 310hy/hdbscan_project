@@ -1,5 +1,5 @@
 import "./App.css";
-import { ScatterPlot } from "./components/ScatterPlot";
+import ScatterPlot from "./components/ScatterPlot";
 
 function App() {
   return (
